@@ -285,7 +285,7 @@ function M.on_pre_entity_settings_pasted(event)
           for _, product in ipairs(recipe.products) do
             if product.type == "item" and current_items[product.name] == nil then
               current_items[product.name] = true
-              local stack_size = game.item_prototypes[product.name].stack_size
+              local stack_size = prototypes.item[product.name].stack_size
               local buffer = math.min(buffer_size, stack_size)
               table.insert(requests, {
                 type = "give",
@@ -324,7 +324,7 @@ function M.on_pre_entity_settings_pasted(event)
         for _, ingredient in ipairs(recipe.ingredients) do
           if ingredient.type == "item" and current_items[ingredient.name] == nil then
             current_items[ingredient.name] = true
-            local stack_size = game.item_prototypes[ingredient.name]
+            local stack_size = prototypes.item[ingredient.name]
               .stack_size
             local buffer = math.min(buffer_size, stack_size)
             table.insert(requests, {
@@ -368,7 +368,7 @@ function M.updatePlayers()
       local main_inv = player.get_inventory(defines.inventory.character_main)
       if main_inv ~= nil then
         local character = player.character
-        if character ~= nil and character.character_personal_logistic_requests_enabled then
+        if character ~= nil and character.get_logistic_point().enabled then
           local main_contents = main_inv.get_contents()
           local cursor_stack = player.cursor_stack
           if cursor_stack ~= nil and cursor_stack.valid_for_read then
@@ -471,41 +471,41 @@ local function update_network_chest(info)
   local contents = inv.get_contents()
   local status = GlobalState.UPDATE_STATUS.NOT_UPDATED
 
-  -- reset inventory
+  -- Reset inventory
   inv.clear()
   inv.set_bar()
   for idx = 1, #inv do
-    inv.set_filter(idx, nil)
+    inv.set_filter(idx, nil) -- Clear filters
   end
 
-  -- make transfers with network
+  -- Make transfers with the network
   for _, request in ipairs(info.requests) do
     local current_count = contents[request.item] or 0
     local network_count = GlobalState.get_item_count(request.item)
+
     if request.type == "take" then
       local n_take = math.max(0, request.buffer - current_count)
       local n_give = math.max(0, network_count - request.limit)
       local n_transfer = math.min(n_take, n_give)
+
       if n_transfer > 0 then
         status = GlobalState.UPDATE_STATUS.UPDATED
         contents[request.item] = current_count + n_transfer
         GlobalState.set_item_count(request.item, network_count - n_transfer)
       end
-      -- missing if the number we wanted to take was more than available
+
+      -- Handle missing items
       if n_take > n_give then
-        GlobalState.missing_item_set(request.item, info.entity.unit_number,
-          n_take - n_give)
+        GlobalState.missing_item_set(request.item, info.entity.unit_number, n_take - n_give)
       end
     else
       local n_transfer
       if request.no_limit then
         n_transfer = current_count
       else
-        n_transfer = math.min(
-          current_count,
-          math.max(0, request.limit - network_count)
-        )
+        n_transfer = math.min(current_count, math.max(0, request.limit - network_count))
       end
+
       if n_transfer > 0 then
         status = GlobalState.UPDATE_STATUS.UPDATED
         contents[request.item] = current_count - n_transfer
@@ -514,14 +514,15 @@ local function update_network_chest(info)
     end
   end
 
-  -- get new sorted requests
+  -- Get new sorted requests
   local requests = {}
   for _, request in ipairs(info.requests) do
-    local stack_size = game.item_prototypes[request.item].stack_size
+    local stack_size = prototypes.item[request.item].stack_size
     local n_slots = math.ceil(request.buffer / stack_size)
     local n_max = n_slots * stack_size
     local old_count = contents[request.item] or 0
     local new_count = math.min(n_max, old_count)
+
     contents[request.item] = old_count - new_count
     table.insert(requests, {
       item = request.item,
@@ -532,20 +533,21 @@ local function update_network_chest(info)
       n_slots = n_slots,
     })
   end
+
   table.sort(requests, request_list_sort)
 
-  -- round n_slots if they exceed total
+  -- Round n_slots if they exceed total
   local current_slots = {}
   for _, request in ipairs(requests) do
     table.insert(current_slots, request.n_slots)
   end
+
   local new_slots = Helpers.int_partition(current_slots, #inv)
   for idx, request in ipairs(requests) do
     request.n_slots = new_slots[idx]
   end
 
-
-  -- flatten sorted requests into slots
+  -- Flatten sorted requests into slots
   local slot_idx = 1
   local bar_idx = 1
   for _, request in ipairs(requests) do
@@ -567,18 +569,27 @@ local function update_network_chest(info)
       slot_idx = slot_idx + 1
     end
   end
+
   inv.set_bar(bar_idx)
 
-  -- put additional items into network
-  for item, count in pairs(contents) do
-    assert(count >= 0)
-    if count > 0 then
-      GlobalState.increment_item_count(item, count)
+  -- Put additional items into the network
+  -- FIXME: This is broken, and where I atm has reached
+  for item,counts in pairs(contents) do 
+    if type(counts) == "table" then
+      log("Count for item " .. item .. " is a table: " .. serpent.line(counts))
+      count = counts.count
     end
+      if( count ~= nil) then
+        assert(count >= 0)
+        if count > 0 then
+          GlobalState.increment_item_count(item, count)
+        end
+      end
   end
 
   return status
 end
+
 
 local function update_tank(info)
   local status = GlobalState.UPDATE_STATUS.NOT_UPDATED

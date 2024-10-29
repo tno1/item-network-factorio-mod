@@ -1,0 +1,193 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.8.4
+Date: 11. 09. 2023
+  Bugfixes:
+    - Fixed bug when deconstructing logistic entities.
+---------------------------------------------------------------------------------------------------
+Version: 0.8.3
+Date: 08. 09. 2023
+  Bugfixes:
+    - Fixed bug where Network Tanks stopped updating.
+---------------------------------------------------------------------------------------------------
+Version: 0.8.2
+Date: 08. 09. 2023
+  Bugfixes:
+    - Fixed bug where unable to load games due to timer bug.
+---------------------------------------------------------------------------------------------------
+Version: 0.8.1
+Date: 08. 09. 2023
+  Features:
+    - Added a Network Sensor that outputs the count of items in the network and updates every 2 seconds.
+    - Added a "Performance" Tab hidden behind a setting that displays durations for performance-critical parts of the mod. Should help while optimizing the mod.
+
+  Bugfixes:
+    - Fixed bug where game would crash when copying to/from a Network Chest to a non-assembler entity like a normal chest.
+    - Fixed bug where the setting to disable logistic integrations didn't work for missing items.
+---------------------------------------------------------------------------------------------------
+Version: 0.8.0
+Date: 03. 09. 2023
+  Features:
+    - Enhanced copy-paste behavior between Network Chests and assemblers. If you copy from a Network Chest and paste on an assembler, it add requests for recipe ingredients for the recipe. If you copy from an assembler and paste on a Network Chest, it will provide recipe products from the chest.
+    - Network Chest Loaders now have a list of suggested filters when attached to a Network Chest.
+
+  Changes:
+    - Changed network chest copy-past behavior so subsequent copies and pastes to the same Network Chest append items rather than overrite items. This should make it easier to have one chest supply multiple assemblers.
+    - All fluids with non-integer temperatures now round up to the nearest temperature when inserted into the network. This makes it possible to request those fluid temps from a Network Tank using the rounded temperature. Please submit a bug if this breaks an existing factory.
+---------------------------------------------------------------------------------------------------
+Version: 0.7.5
+Date: 28. 08. 2023
+  Features:
+    - Added "No Limit" option when providing items from Network Chests and Tanks.
+
+  Bugfixes:
+    - Fixed bug where using ReStack to lower stack size would crash.
+    - Fixed bug where unable to set large buffers using UI.
+---------------------------------------------------------------------------------------------------
+Version: 0.7.4
+Date: 20. 08. 2023
+  Features:
+    - Added setting to change the number of updates per tick.
+    - Added ability to deposit and retrieve items in the Network View. Thanks to bengardner for implementing this feature!
+---------------------------------------------------------------------------------------------------
+Version: 0.7.3
+Date: 18. 08. 2023
+  Bugfixes:
+    - Hopefully fixed bug when viewing shortages tab.
+---------------------------------------------------------------------------------------------------
+Version: 0.7.2
+Date: 15. 08. 2023
+  Features:
+    - Added support for rails, cliff explosives, stone brick paths, repair packs and modules to be automatically supplied to logistic networks. Thanks to bengardner for implementing this feature!
+
+  Bugfixes:
+    - Requests for constructing missing items in the construction zone of roboports and players will now be satisfied. Before, only request for missing items in the logistic zone of roboports were satisfied. Thanks to bengardner for implementing this feature!
+    - Fixed the bug where the shortages tab would crash when there are invalid item names.
+---------------------------------------------------------------------------------------------------
+Version: 0.7.1
+Date: 11. 08. 2023
+  Bugfixes:
+    - Removed flib reference and made the Network View header draggable.
+---------------------------------------------------------------------------------------------------
+Version: 0.7.0
+Date: 11. 08. 2023
+  Features:
+    - Added a new "Shortages" tab to the Network View that displays item shortages to help find bottlenecks. Big thanks to bengardner for implementing this feature!
+    - Added support for supplying Spitertron logistic requests from the Item Network. Big thanks to bengardner for implementing this feature!
+    - Added support for automatically transferring items to a logistic network if it is missing items to construct ghosts or upgrades. Big thanks to bengardner for implementing this feature!
+
+  Changes:
+    - The Network View now has tabs instead of radio buttons for the each view. Big thanks to bengardner for implementing this feature!
+---------------------------------------------------------------------------------------------------
+Version: 0.6.0
+Date: 08. 08. 2023
+  Features:
+    - Logistic Requester and Buffer chests now pull items from the Item Network. This can be disabled in settings. Huge thanks to bengardner for the idea and implementation, as well as being the first external contributor to this mod. Thanks!
+
+  Changes:
+    - Increased Network Tank health from 10 -> 200.
+---------------------------------------------------------------------------------------------------
+Version: 0.5.0
+Date: 29. 07. 2023
+  Features:
+    - Network Tanks now support fluids with different temperatures! Make sure that if you provide fluids at non-default temperatures (like steam) you update all requester tanks with the new temperature. You can use the Network View to see which fluids are in your network to help debug.
+    - Added tooltips to items and fluids in the Network View.
+
+  Changes:
+    - Network Tanks that are configured as Providers now only need "limit" and will try to push any fluids into the network.
+    - Network Tanks now require a temperature when pulling fluids out of the network.
+---------------------------------------------------------------------------------------------------
+Version: 0.4.0
+Date: 28. 07. 2023
+  Changes:
+    - Changed queue update logic to be less random and more consistent. This should help smooth out performance, especially for factories with a ton of Network Chests and Tanks.
+---------------------------------------------------------------------------------------------------
+Version: 0.3.7
+Date: 27. 07. 2023
+  Bugfixes:
+    - Fixed bug where interacting with the mod before the first game tick would crash. This was easy to reproduce in the "Map Editor" mode.
+---------------------------------------------------------------------------------------------------
+Version: 0.3.6
+Date: 22. 07. 2023
+  Bugfixes:
+    - Fixed bug where destroying Network Chests and Tanks would delete Buffer contents. Contents are now automatically pushed into the network.
+    - Fixed bug where replacing ghosts of destroyed Network Chests and Tanks would not set previous requests.
+---------------------------------------------------------------------------------------------------
+Version: 0.3.5
+Date: 19. 07. 2023
+  Bugfixes:
+    - Fixed crash when deleting a Network Chest with the UI open.
+---------------------------------------------------------------------------------------------------
+Version: 0.3.4
+Date: 12. 07. 2023
+  Changes:
+    - Increased loader speed to 360 items/sec. No issues seen in tests on existing factories but log a bug if this causes issues.
+
+  Bugfixes:
+    - Fixed bug where on_entity_cloned handler did not register network tanks.
+---------------------------------------------------------------------------------------------------
+Version: 0.3.3
+Date: 05. 07. 2023
+  Features:
+    - Added ability to copy-paste settings from one Network Tank to another.
+
+  Bugfixes:
+    - Fixed bug where swapping between 'Request' and 'Provide' without a limit would crash.
+---------------------------------------------------------------------------------------------------
+Version: 0.3.2
+Date: 04. 07. 2023
+  Changes:
+    - Swapped "Request" and "Provide" to be consistent with logistics chests.
+    - Removed readme pictures to reduce zip size from 14Mb -> 500Kb.
+    - Changed to update limit when switching between Request and Provide in Network Chests.
+
+  Bugfixes:
+    - Fixed bug where Network Tanks and Loaders could not be placed in space in Space Exploration.
+---------------------------------------------------------------------------------------------------
+Version: 0.3.1
+Date: 02. 07. 2023
+  Major Features:
+    - Added Network Tanks to transport fuids.
+
+  Features:
+    - Added refresh button to network view.
+
+  Bugfixes:
+    - Fixed to_be_deconstructed bug where deleting and then canceling deletion would stop updating chest.
+---------------------------------------------------------------------------------------------------
+Version: 0.2.2
+Date: 26. 06. 2023
+  Features:
+    - Added player setting to disable logistic requests and trash from the network.
+    - Added setting to configure default stack size on assembler paste.
+
+  Bugfixes:
+    - Fixed on_entity_cloned handler.
+---------------------------------------------------------------------------------------------------
+Version: 0.2.1
+Date: 14. 06. 2023
+  Features:
+    - Added first version of network view UI to view network contents.
+
+  Bugfixes:
+    - Fixed crash when updating blueprints.
+    - Fixed potential UI bug on multiplayer.
+---------------------------------------------------------------------------------------------------
+Version: 0.2.0
+Date: 10. 06. 2023
+  Features:
+    - Added ability to press Enter to submit modals.
+
+  Bugfixes:
+    - Fixed multiplayer UI bug by refactoring UI to store player states separately.
+    - Fixed bug where pasting a deleted entity would remove requests.
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 06. 06. 2023
+  Features:
+    - Added support for player logistics.
+
+  Changes:
+    - Increased loader speed.
+
+  Bugfixes:
+    - Renamed Give -> Request and Take -> Provide.

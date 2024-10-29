@@ -18,47 +18,34 @@ function M.setup()
 end
 
 function M.inner_setup()
-  if global.mod == nil then
+  if not global.mod then
     global.mod = {
       rand = game.create_random_generator(),
       chests = {},
       scan_queue = Queue.new(),
       items = {},
+      player_info = {},
+      fluids = {},
+      missing_item = {}, -- missing_item[item][unit_number] = { game.tick, count }
+      missing_fluid = {}, -- missing_fluid[key][unit_number] = { game.tick, count }
+      tanks = {},
+      vehicles = {}, -- vehicles[unit_number] = entity
+      logistic = {}, -- key=unit_number, val=entity
+      logistic_names = {}, -- key=item name, val=logistic_mode from prototype
+      alert_trans = {}, -- alert_trans[unit_number] = game.tick
+      sensors = {},
+      active_scan_queue = Queue.new(),
+      timers = {},
     }
-  end
-  M.remove_old_ui()
-  if global.mod.player_info == nil then
-    global.mod.player_info = {}
-  end
-
-  if global.mod.network_chest_has_been_placed == nil then
-    global.mod.network_chest_has_been_placed = global.mod.scan_queue.size > 0
-  end
-
-  if global.mod.fluids == nil then
-    global.mod.fluids = {}
-  end
-  if global.mod.missing_item == nil then
-    global.mod.missing_item = {} -- missing_item[item][unit_number] = { game.tick, count }
-  end
-  if global.mod.missing_fluid == nil then
-    global.mod.missing_fluid = {} -- missing_fluid[key][unit_number] = { game.tick, count }
-  end
-  if global.mod.tanks == nil then
-    global.mod.tanks = {}
-  end
-
-  if global.mod.vehicles == nil then
-    global.mod.vehicles = {} -- vehicles[unit_number] = entity
     M.vehicle_scan_surfaces()
   end
 
-  if global.mod.logistic == nil then
-    global.mod.logistic = {} -- key=unit_number, val=entity
-  end
-  if global.mod.logistic_names == nil then
-    global.mod.logistic_names = {} -- key=item name, val=logistic_mode from prototype
-  end
+  M.remove_old_ui()
+
+  -- Check if the network chest has been placed
+  global.mod.network_chest_has_been_placed = global.mod.scan_queue.size > 0
+
+  -- Scan for logistic names and update if changed
   local logistic_names = M.logistic_scan_prototypes()
   if not tables_have_same_keys(logistic_names, global.mod.logistic_names) then
     global.mod.logistic_names = logistic_names
@@ -66,14 +53,7 @@ function M.inner_setup()
     M.logistic_scan_surfaces()
   end
 
-  if global.mod.alert_trans == nil then
-    global.mod.alert_trans = {} -- alert_trans[unit_number] = game.tick
-  end
-
-  if global.mod.sensors == nil then
-    global.mod.sensors = {}
-  end
-
+  -- Run fluid temperature conversion if not done
   if not global.mod.has_run_fluid_temp_conversion then
     local new_fluids = {}
     for fluid, count in pairs(global.mod.fluids) do
@@ -82,25 +62,22 @@ function M.inner_setup()
       new_fluids[fluid][default_temp] = count
     end
     global.mod.fluids = new_fluids
+
     local n_tanks = 0
     for _, entity in pairs(global.mod.tanks) do
       n_tanks = n_tanks + 1
-      if entity.config ~= nil then
-        entity.config.temperature =
-          game.fluid_prototypes[entity.config.fluid].default_temperature
+      if entity.config then
+        entity.config.temperature = game.fluid_prototypes[entity.config.fluid].default_temperature
       end
     end
+
     if n_tanks > 0 then
-      game.print(
-        "Migrated Item Network fluids to include temperatures. Warning: If you provide a fluid at a non-default temperature (like steam), you will have to update every requester tank to use the new fluid temperature.")
+      game.print("Migrated Item Network fluids to include temperatures. Warning: If you provide a fluid at a non-default temperature (like steam), you will have to update every requester tank to use the new fluid temperature.")
     end
     global.mod.has_run_fluid_temp_conversion = true
   end
 
-  if global.mod.active_scan_queue == nil then
-    global.mod.active_scan_queue = Queue.new()
-  end
-
+  -- Run fluid temperature rounding conversion if not done
   if not global.mod.has_run_fluid_temp_rounding_conversion then
     local new_fluids = {}
     for fluid, temp_map in pairs(global.mod.fluids) do
@@ -108,17 +85,17 @@ function M.inner_setup()
       new_fluids[fluid] = new_temp_map
       for temp, count in pairs(temp_map) do
         local new_temp = math.ceil(temp)
-        local existing_count = new_temp_map[new_temp] or 0
-        new_temp_map[new_temp] = existing_count + count
+        new_temp_map[new_temp] = (new_temp_map[new_temp] or 0) + count
       end
     end
     global.mod.fluids = new_fluids
     global.mod.has_run_fluid_temp_rounding_conversion = true
   end
 
-  -- always reset timers on load since they don't save state
+  -- Always reset timers on load since they don't save state
   global.mod.timers = {}
 end
+
 
 function M.start_timer(name)
   local timer = global.mod.timers[name]
@@ -285,7 +262,8 @@ end
 function M.logistic_scan_prototypes()
   local info = {} -- key=name, val=logistic_mode
   -- find all with type="logistic-container" and (logistic_mode="requester" or logistic_mode="buffer")
-  for name, prot in pairs(game.get_filtered_entity_prototypes { {
+  game.print("Hello")
+  for name, prot in pairs(prototypes.get_entity_filtered { {
     filter = "type",
     type = "logistic-container",
   } }) do
@@ -295,6 +273,8 @@ function M.logistic_scan_prototypes()
   end
   return info
 end
+
+
 
 function M.is_logistic_entity(item_name)
   return global.mod.logistic_names[item_name] ~= nil

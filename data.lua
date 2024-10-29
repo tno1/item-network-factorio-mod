@@ -18,8 +18,7 @@ function M.add_network_chest()
   local override_item_name = "iron-chest"
   local overwrite_prototype = "container"
 
-  local entity = table.deepcopy(data.raw[overwrite_prototype]
-    [override_item_name])
+  local entity = table.deepcopy(data.raw[overwrite_prototype][override_item_name])
   entity.name = name
   entity.picture = {
     filename = Paths.graphics .. "/entities/network-chest.png",
@@ -30,11 +29,16 @@ function M.add_network_chest()
   entity.inventory_type = "with_filters_and_bar"
   entity.minable.result = name
 
+  -- Add new fields if required by Factorio 2.0
+  entity.circuit_wire_connection_points = data.raw[overwrite_prototype][override_item_name].circuit_wire_connection_points or {}
+  entity.circuit_connector_sprites = data.raw[overwrite_prototype][override_item_name].circuit_connector_sprites or {}
+  entity.circuit_wire_max_distance = data.raw[overwrite_prototype][override_item_name].circuit_wire_max_distance or 0
+
   local item = table.deepcopy(data.raw["item"][override_item_name])
   item.name = name
   item.place_result = name
   item.icon = Paths.graphics .. "/items/network-chest.png"
-  item.size = 64
+  item.icon_size = 64
 
   local recipe = {
     name = name,
@@ -42,8 +46,7 @@ function M.add_network_chest()
     enabled = true,
     energy_required = 0.5,
     ingredients = {},
-    result = name,
-    result_count = 1,
+    results = {{type="item",name=name,amount=1}},
   }
 
   data:extend({ entity, item, recipe })
@@ -57,8 +60,7 @@ function M.add_loader()
     type = "loader-1x1",
     icon = Paths.graphics .. "/entities/express-loader.png",
     icon_size = 64,
-    flags = { "placeable-neutral", "player-creation",
-      "fast-replaceable-no-build-while-moving" },
+    flags = { "placeable-neutral", "player-creation" },
     minable = {
       mining_time = 0.2,
       result = "network-loader",
@@ -69,14 +71,11 @@ function M.add_loader()
     selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
     drawing_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
     animation_speed_coefficient = 32,
-    belt_animation_set = data.raw["transport-belt"]["express-transport-belt"]
-      .belt_animation_set,
+    belt_animation_set = data.raw["transport-belt"]["express-transport-belt"].belt_animation_set,
     container_distance = 0.75,
     belt_length = 0.5,
     fast_replaceable_group = "loader",
     filter_count = 1,
-    -- https://wiki.factorio.com/Prototype/TransportBeltConnectable#speed
-    -- 360 items / sec
     speed = 0.75,
     structure = {
       direction_in = {
@@ -121,8 +120,7 @@ function M.add_loader()
     enabled = true,
     energy_required = 0.5,
     ingredients = {},
-    result = name,
-    result_count = 1,
+    results = {{type="item",name=name,amount=1}},
   }
 
   data:extend({ entity, item, recipe })
@@ -131,84 +129,73 @@ end
 function M.add_network_tank()
   local name = "network-tank"
   local override_item_name = "storage-tank"
-
-  local entity = {
-    name = name,
-    type = "storage-tank",
-    flags = {
-      "placeable-neutral",
-      "player-creation",
-      "fast-replaceable-no-build-while-moving",
-    },
-    icon = Paths.graphics .. "/entities/network-tank.png",
-    icon_size = 64,
-    selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
-    collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
-    window_bounding_box = { { -1, -0.5 }, { 1, 0.5 } },
-    drawing_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
-    fluid_box = {
-      base_area = constants.TANK_AREA,
-      height = constants.TANK_HEIGHT,
-      pipe_connections =
-      {
-        { position = { 0, 1 }, type = "input-output" },
-      },
-    },
-    two_direction_only = false,
-    pictures = {
-      picture = {
-        sheet = {
-          filename = Paths.graphics .. "/entities/network-tank.png",
-          size = 64,
-          scale = 0.5,
-        },
-      },
-      window_background = {
-        filename = Paths.graphics .. "/empty-pixel.png",
-        size = 1,
-      },
-      fluid_background = {
-        filename = Paths.graphics .. "/entities/fluid-background.png",
-        size = { 32, 32 },
-      },
-      flow_sprite = {
-        filename = Paths.graphics .. "/empty-pixel.png",
-        size = 1,
-      },
-      gas_flow = {
-        filename = Paths.graphics .. "/empty-pixel.png",
-        size = 1,
-      },
-    },
-    flow_length_in_ticks = 1,
-    minable = {
-      mining_time = 0.5,
-      result = name,
-    },
-    se_allow_in_space = true,
-    allow_copy_paste = true,
-    additional_pastable_entities = { "network-tank" },
-    max_health = 200,
+  
+  -- Start by deep copying the existing tank prototype
+  local entity = table.deepcopy(data.raw["storage-tank"][override_item_name])
+  entity.name = name
+  entity.icon = Paths.graphics .. "/entities/network-tank.png"
+  entity.icon_size = 64
+  entity.selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } }
+  entity.collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } }
+  entity.fluid_box.volume=100000
+  entity.fluid_box.base_area = constants.TANK_AREA
+  entity.fluid_box.height = constants.TANK_HEIGHT
+  entity.fluid_box.pipe_connections = {
+        { direction = defines.direction.north, position = {0, 0.2} }
   }
+  entity.two_direction_only = false
+  entity.pictures = {
+    picture = {
+      sheet = {
+        filename = Paths.graphics .. "/entities/network-tank.png",
+        size = 64,
+        scale = 0.5,
+      },
+    },
+    window_background = {
+      filename = Paths.graphics .. "/empty-pixel.png",
+      size = 1,
+    },
+    fluid_background = {
+      filename = Paths.graphics .. "/entities/fluid-background.png",
+      size = { 32, 32 },
+    },
+    flow_sprite = {
+      filename = Paths.graphics .. "/empty-pixel.png",
+      size = 1,
+    },
+    gas_flow = {
+      filename = Paths.graphics .. "/empty-pixel.png",
+      size = 1,
+    },
+  }
+  entity.flow_length_in_ticks = 1
+  entity.minable = { mining_time = 0.5, result = name }
+  entity.se_allow_in_space = true
+  entity.allow_copy_paste = true
+  entity.additional_pastable_entities = { "network-tank" }
+  entity.max_health = 200
 
+  -- Define the item for the network tank
   local item = table.deepcopy(data.raw["item"][override_item_name])
   item.name = name
   item.place_result = name
   item.icon = Paths.graphics .. "/items/network-tank.png"
-  item.size = 64
+  item.icon_size = 64
 
+  -- Define the recipe for the network tank
   local recipe = {
     name = name,
     type = "recipe",
     enabled = true,
     energy_required = 0.5,
     ingredients = {},
-    result = name,
-    result_count = 1,
+    results = { { type = "item", name = name, amount = 1 } },  -- Correcting the results format
   }
 
   data:extend({ entity, item, recipe })
 end
+
 
 function M.add_network_sensor()
   local name = "network-sensor"
@@ -218,9 +205,12 @@ function M.add_network_sensor()
   local entity = table.deepcopy(data.raw[override_prototype][override_item_name])
   entity.name = name
   entity.minable.result = name
-  -- Need enough to hold every item we might build
-  -- We could scan in data-final-fixes to get a more accurate count, but that is ~1700 items.
   entity.item_slot_count = 1000
+
+  -- Add circuit fields if required for Factorio 2.0
+  entity.circuit_wire_connection_points = data.raw[override_prototype][override_item_name].circuit_wire_connection_points or {}
+  entity.circuit_connector_sprites = data.raw[override_prototype][override_item_name].circuit_connector_sprites or {}
+  entity.circuit_wire_max_distance = data.raw[override_prototype][override_item_name].circuit_wire_max_distance or 0
 
   local item = table.deepcopy(data.raw["item"][override_item_name])
   item.name = name
@@ -229,7 +219,7 @@ function M.add_network_sensor()
 
   local recipe = table.deepcopy(data.raw["recipe"][override_item_name])
   recipe.name = name
-  recipe.result = name
+  recipe.results = {{type="item",name=name,amount=1}}
   recipe.enabled = true
 
   data:extend({ entity, item, recipe })
